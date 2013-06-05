@@ -58,7 +58,7 @@ import br.gov.frameworkdemoiselle.util.ResourceBundle;
  * @author SERPRO
  */
 @Interceptor
-@RequiredRole(value = "")
+@RequiredRole(value = "", restriction="")
 public class RequiredRoleInterceptor implements Serializable {
 
 	private static final long serialVersionUID = 1L;
@@ -96,14 +96,27 @@ public class RequiredRoleInterceptor implements Serializable {
 				userRoles.add(role);
 			}
 		}
-
-		if (userRoles.isEmpty()) {
-			getLogger()
-					.error(getBundle().getString("does-not-have-role", getSecurityContext().getCurrentUser().getName(),
-							roles));
-
-			// AuthorizationException a = new AuthorizationException(null);
-			throw new AuthorizationException(getBundle().getString("does-not-have-role-ui", roles));
+		
+		// verificando restricoes
+		String restriction = getRestriction(ic);
+		if (restriction == null || restriction.trim().equals("or")){
+			if (userRoles.isEmpty()) {
+				getLogger()
+						.error(getBundle().getString("does-not-have-role", getSecurityContext().getCurrentUser().getName(),
+								roles));
+	
+				// AuthorizationException a = new AuthorizationException(null);
+				throw new AuthorizationException(getBundle().getString("does-not-have-role-ui", roles));
+			}
+		} else if (restriction != null && restriction.trim().equals("and")) {
+			if (userRoles.size() != roles.size()){
+				getLogger()
+				.error(getBundle().getString("does-not-have-role", getSecurityContext().getCurrentUser().getName(),
+						roles));
+				// AuthorizationException a = new AuthorizationException(null);
+				throw new AuthorizationException(getBundle().getString("does-not-have-role-ui", roles));
+				
+			}
 		}
 
 		getLogger().debug(
@@ -131,6 +144,19 @@ public class RequiredRoleInterceptor implements Serializable {
 		}
 
 		return Arrays.asList(roles);
+	}
+	
+	private String getRestriction(InvocationContext ic) {
+		String restriction = null;
+
+		if (ic.getMethod().getAnnotation(RequiredRole.class) == null) {
+			if (ic.getTarget().getClass().getAnnotation(RequiredRole.class) != null) {
+				restriction = ic.getTarget().getClass().getAnnotation(RequiredRole.class).restriction();
+			}
+		} else {
+			restriction = ic.getMethod().getAnnotation(RequiredRole.class).restriction();
+		}
+		return restriction;
 	}
 
 	private SecurityContext getSecurityContext() {

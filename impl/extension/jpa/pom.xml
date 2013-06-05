@@ -48,6 +48,7 @@
 		<version>2.4.0-BETA2-SNAPSHOT</version>
 		<relativePath>../../../parent/extension</relativePath>
 	</parent>
+	
 
 	<name>Demoiselle Framework JPA Extension</name>
 	<description>
